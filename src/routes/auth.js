@@ -51,13 +51,14 @@ router.post("/signup", async (req, res) => {
       .json({ message: "User created", user: result.rows[0] });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ message: "Signup failed" });
+    return res.status(500).json({ message: "Signup failed: " + err });
   }
 });
 
 // LOGIN
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
+  console.log(email, password);
 
   try {
     const isEmailValid = emailValidator(email);

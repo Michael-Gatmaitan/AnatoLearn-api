@@ -4,6 +4,10 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const userRoutes = require("./routes/userRoutes");
 const authRoutes = require("./routes/auth");
+const qaRoutes = require("./routes/activities/actQaRoutes");
+const topicRoutes = require("./routes/topicRoutes");
+const totalScoreRoutes = require("./routes/totalScoreRoutes");
+const activityScoreRoutes = require("./routes/activityScores");
 
 dotenv.config();
 
@@ -18,6 +22,10 @@ app.use(
 );
 app.use("/api/users", userRoutes);
 app.use("/auth", authRoutes);
+app.use("/activities", qaRoutes);
+app.use("/topics", topicRoutes);
+app.use("/total-scores", totalScoreRoutes);
+app.use("/activity-scores", activityScoreRoutes);
 
 const PORT = process.env.PORT || 8000;
 
