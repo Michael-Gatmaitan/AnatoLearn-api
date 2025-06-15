@@ -27,6 +27,10 @@ app.use("/topics", topicRoutes);
 app.use("/total-scores", totalScoreRoutes);
 app.use("/activity-scores", activityScoreRoutes);
 
+app.get("/", (req, res) => {
+  return res.json({ message: "Hello, i'm michael gatmaitan :>"});
+});
+
 const PORT = process.env.PORT || 8000;
 
 app.listen(PORT, () => {
