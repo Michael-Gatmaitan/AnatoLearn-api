@@ -28,4 +28,43 @@ router.get("/qa", async (req, res) => {
   }
 });
 
+router.post("/qa", async (req, res) => {
+  // const
+  const { topic_id, act_type_id, question, answer, choices } = req.body;
+
+  try {
+    const activity = (
+      await pool.query(
+        "SELECT * FROM activities WHERE act_type_id=$1 AND topic_id=$2",
+        [act_type_id, topic_id],
+      )
+    ).rows[0];
+
+    const act_id = activity.id;
+
+    const newQA = await pool.query(
+      "INSERT INTO act_qa (act_id, question, answer, choices) VALUES ($1, $2, $3, $4)",
+      [act_id, question, answer, choices],
+    );
+
+    console.log(newQA);
+    return res.json({ newQA, success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete("/qa", async (req, res) => {
+  const id = req.query.id;
+
+  try {
+    const deletedQA = await pool.query("DELETE FROM act_qa WHERE id=$1", [id]);
+    console.log(deletedQA);
+
+    return res.json({ message: "Deleted" });
+  } catch (err) {
+    res.status(500).json({ erro: err.message });
+  }
+});
+
 module.exports = router;
