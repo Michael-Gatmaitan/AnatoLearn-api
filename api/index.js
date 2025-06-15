@@ -20,6 +20,7 @@ app.use(
     extended: true,
   }),
 );
+
 app.use("/api/users", userRoutes);
 app.use("/auth", authRoutes);
 app.use("/activities", qaRoutes);
@@ -28,11 +29,13 @@ app.use("/total-scores", totalScoreRoutes);
 app.use("/activity-scores", activityScoreRoutes);
 
 app.get("/", (req, res) => {
-  return res.json({ message: "Hello, i'm michael gatmaitan :>"});
+  return res.json({ message: "Hello, i'm michael gatmaitan :>" });
 });
 
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log(`Listening on port ${PORT}`);
 });
+
+module.exports = app;
