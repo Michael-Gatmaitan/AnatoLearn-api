@@ -94,7 +94,7 @@ router.post("/total-scores", async (req, res) => {
   try {
     await pool.query("BEGIN");
 
-    const totalScore = Math.abs(tap + mcq + tof);
+    const totalScore = tap + mcq + tof;
     const accuracy = Math.floor(totalScore / 30);
 
     const q =
