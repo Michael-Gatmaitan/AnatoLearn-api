@@ -95,10 +95,11 @@ router.post("/total-scores", async (req, res) => {
     await pool.query("BEGIN");
 
     const totalScore = tap + mcq + tof;
-    const accuracy = Math.floor(totalScore / 30);
+    const accuracy = (100 / 15) * totalScore; // Accuracy in percentage
 
     const q =
       "INSERT INTO total_scores (user_id, topic_id, total_score, accuracy) VALUES ($1, $2, $3, $4) RETURNING *";
+
     const newTotalScores = await pool.query(q, [
       user_id,
       topic_id,

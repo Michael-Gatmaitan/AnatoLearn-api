@@ -1,19 +1,23 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db");
-const { getTotalScores } = require("../controllers/totalScoreController");
+const {
+  getTotalScores,
+  getPassedScores,
+} = require("../controllers/totalScoreController");
 
 // Get score of user_id base on topic_id
 router.get("/", async (req, res) => {
   const user_id = req.query.user_id;
   const topic_id = req.query.topic_id;
+  const get_passed_scores = req.query.get_passed_scores;
 
   try {
     if (user_id && topic_id) {
-      // const result = await pool.query(
-      //   "SELECT * FROM total_scores WHERE user_id=$1 AND topic_id=$2",
-      //   [user_id, topic_id],
-      // );
+      if (get_passed_scores) {
+        const passed_scores = await getPassedScores(user_id, topic_id);
+        return res.json({ data: passed_scores });
+      }
 
       const totalScores = await getTotalScores(user_id, topic_id);
       return res.json({ data: totalScores });
