@@ -18,9 +18,10 @@ router.get("/qa", async (req, res) => {
 
     const act_id = activity.id;
 
-    const act_qa = await pool.query("SELECT * FROM act_qa WHERE act_id=$1", [
-      act_id,
-    ]);
+    const act_qa = await pool.query(
+      "SELECT * FROM act_qa WHERE act_id=$1 ORDER BY RANDOM() LIMIT 5",
+      [act_id],
+    );
 
     return res.json({ data: act_qa.rows });
   } catch (err) {

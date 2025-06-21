@@ -31,7 +31,7 @@ router.get("/", async (req, res) => {
 
     res.json({ ...result });
   } catch (err) {
-    console.log("Error in POST /user-topic-progress:", err);
+    console.log("Error in GET /user-topic-progress:", err);
     return res.status(500).json({ message: "Server error" });
   }
 });
@@ -43,6 +43,7 @@ router.put("/", async (req, res) => {
     let result;
 
     if (update_type == "lesson") {
+      console.log("trying to update lesson on user topic progress");
       result = await updateUserTopicProgressLesson(user_id, topic_id);
     } else if (update_type == "explore") {
       result = await updateUserTopicProgressExplore(user_id, topic_id);

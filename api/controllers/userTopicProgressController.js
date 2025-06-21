@@ -30,29 +30,29 @@ const getUserTopicProgress = async (user_id, topic_id) => {
 
 const updateUserTopicProgressLesson = async (user_id, topic_id) => {
   const updateQuery =
-    "UPDATE UserTopicProgress SET lesson_completed = TRUE WHERE user_id=$1 AND topic_id=$2";
+    "UPDATE UserTopicProgress SET lesson_completed = TRUE WHERE user_id=$1 AND topic_id=$2 RETURNING *";
   const params = [user_id, topic_id];
 
   const result = await pool.query(updateQuery, params);
-  return result;
+  return result.rows[0];
 };
 
 const updateUserTopicProgressExplore = async (user_id, topic_id) => {
   const updateQuery =
-    "UPDATE UserTopicProgress SET explore_completed = TRUE WHERE user_id=$1 AND topic_id=$2";
+    "UPDATE UserTopicProgress SET explore_completed = TRUE WHERE user_id=$1 AND topic_id=$2 RETURNING *";
   const params = [user_id, topic_id];
 
   const result = await pool.query(updateQuery, params);
-  return result;
+  return result.rows[0];
 };
 
 const updateUserTopicProgressActivities = async (user_id, topic_id) => {
   const updateQuery =
-    "UPDATE UserTopicProgress SET activities_completed = TRUE WHERE user_id=$1 AND topic_id=$2";
+    "UPDATE UserTopicProgress SET activities_completed = TRUE WHERE user_id=$1 AND topic_id=$2 RETURNING *";
   const params = [user_id, topic_id];
 
   const result = await pool.query(updateQuery, params);
-  return result;
+  return result.rows[0];
 };
 
 module.exports = {
