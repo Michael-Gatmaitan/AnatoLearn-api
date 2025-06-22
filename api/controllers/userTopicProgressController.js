@@ -34,6 +34,7 @@ const updateUserTopicProgressLesson = async (user_id, topic_id) => {
   const params = [user_id, topic_id];
 
   const result = await pool.query(updateQuery, params);
+
   return result.rows[0];
 };
 

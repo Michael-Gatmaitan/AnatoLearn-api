@@ -43,10 +43,11 @@ router.put("/", async (req, res) => {
     let result;
 
     if (update_type == "lesson") {
-      console.log("trying to update lesson on user topic progress");
       result = await updateUserTopicProgressLesson(user_id, topic_id);
+      console.log("Result updating lesson: ", result);
     } else if (update_type == "explore") {
       result = await updateUserTopicProgressExplore(user_id, topic_id);
+      console.log("Result updating explore: ", result);
     } else if (update_type == "activities") {
       result = await updateUserTopicProgressActivities(user_id, topic_id);
     }
