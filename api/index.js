@@ -9,6 +9,7 @@ const topicRoutes = require("./routes/topicRoutes");
 const totalScoreRoutes = require("./routes/totalScoreRoutes");
 const activityScoreRoutes = require("./routes/activityScores");
 const userTopicProgressRoutes = require("./routes/userTopicProgressRoutes");
+const userTagViewsRoutes = require("./routes/userTagViewsRoutes");
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ app.use("/topics", topicRoutes);
 app.use("/total-scores", totalScoreRoutes);
 app.use("/activity-scores", activityScoreRoutes);
 app.use("/user-topic-progress", userTopicProgressRoutes);
+app.use("/user-tag-views", userTagViewsRoutes);
 
 app.get("/", (req, res) => {
   return res.json({ message: "Hello, i'm michael gatmaitan :>" });

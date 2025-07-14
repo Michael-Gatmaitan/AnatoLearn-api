@@ -60,7 +60,6 @@ router.get("/total-attempts", async (req, res) => {
     const params = [user_id, topic_id];
 
     const result = await pool.query(selectQuery, params);
-    console.log(result);
     return res.json(result.rows[0]);
   } catch (err) {
     return res.status(500).json({ message: err.message });

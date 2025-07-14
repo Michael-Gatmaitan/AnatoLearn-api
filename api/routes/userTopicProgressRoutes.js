@@ -27,8 +27,6 @@ router.get("/", async (req, res) => {
   try {
     const result = await getUserTopicProgress(user_id, topic_id);
 
-    console.log(result);
-
     res.json({ ...result });
   } catch (err) {
     console.log("Error in GET /user-topic-progress:", err);
