@@ -3,7 +3,7 @@ const router = express.Router();
 const pool = require("../db");
 const {
   getActivityScoresByTotalScoreId,
-} = require("../controllers/activityScoresController");
+} = require("../controllers/main-controller");
 
 // Get score of activity of user = user_id in topic of topic_id and act_type_id if it is tap, mcq or tof
 router.get("/", async (req, res) => {

@@ -5,7 +5,7 @@ const {
   updateUserTopicProgressLesson,
   updateUserTopicProgressExplore,
   updateUserTopicProgressActivities,
-} = require("../controllers/userTopicProgressController");
+} = require("../controllers/main-controller");
 const router = express.Router();
 
 router.post("/", async (req, res) => {

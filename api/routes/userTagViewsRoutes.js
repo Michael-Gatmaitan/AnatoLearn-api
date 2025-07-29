@@ -3,8 +3,8 @@ const {
   getUserTagViewsByUserId,
   createUserTagView,
   getUserTagViewsByUserIdAndTagId,
-} = require("../controllers/userTagViewsController");
-const { getTagByName } = require("../controllers/tagsController");
+} = require("../controllers/main-controller");
+const { getTagByName } = require("../controllers/main-controller");
 const pool = require("../db");
 const router = express.Router();
 

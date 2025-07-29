@@ -4,7 +4,7 @@ const pool = require("../db");
 const {
   getTotalScores,
   getPassedScores,
-} = require("../controllers/totalScoreController");
+} = require("../controllers/main-controller");
 
 // Get score of user_id base on topic_id
 router.get("/", async (req, res) => {
