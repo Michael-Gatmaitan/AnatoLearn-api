@@ -17,27 +17,35 @@ router.post("/signup", async (req, res) => {
     console.log(hashedPassword);
 
     const isEmailValid = emailValidator(email);
-    if (name.lenth < 3) {
-      res
-        .status(500)
-        .json({ message: "Name length should at least 4 characters long" });
+
+    if (!isEmailValid) {
+      res.status(500).json({ message: "Invalid email", type: "email" });
       return;
     }
 
-    if (password.length < 8) {
-      res.status(500).json({ message: "Password too short" });
+    if (name.lenth < 3) {
+      res.status(500).json({
+        message: "Name length should at least 4 characters long",
+        type: "username",
+      });
+      return;
+    }
+
+    if (password.length <= 7) {
+      res
+        .status(500)
+        .json({
+          message: "Password must be 8 characters long",
+          type: "password",
+        });
       return;
     }
 
     if (fname == "" || lname == "") {
-      res
-        .status(500)
-        .json({ message: "First name and or last name should have a value" });
-      return;
-    }
-
-    if (!isEmailValid) {
-      res.status(500).json({ message: "Invalid email" });
+      res.status(500).json({
+        message: "First name and last name should have a value",
+        type: "name",
+      });
       return;
     }
 
@@ -62,8 +70,10 @@ router.post("/login", async (req, res) => {
 
   try {
     const isEmailValid = emailValidator(email);
-    if (!isEmailValid || password.length < 8) {
-      return res.status(400).json({ message: "Invalid email or password" });
+    if (!isEmailValid || password.length <= 7) {
+      return res
+        .status(400)
+        .json({ message: "Invalid email or password", type: "all" });
     }
 
     const result = await pool.query("SELECT * FROM users WHERE email = $1", [
@@ -71,20 +81,22 @@ router.post("/login", async (req, res) => {
     ]);
 
     if (result.rows.length === 0) {
-      return res.status(400).json({ message: "Invalid email or password" });
+      return res.status(400).json({ message: "No user found.", type: "user" });
     }
 
     const user = result.rows[0];
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid email or password" });
+      return res
+        .status(400)
+        .json({ message: "Incorrect password", type: "password" });
     }
 
     res.json({ message: "Login successful", user });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Login failed" });
+    res.status(500).json({ message: "Login failed", type: "server" });
   }
 });
 
