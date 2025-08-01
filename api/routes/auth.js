@@ -32,12 +32,10 @@ router.post("/signup", async (req, res) => {
     }
 
     if (password.length <= 7) {
-      res
-        .status(500)
-        .json({
-          message: "Password must be 8 characters long",
-          type: "password",
-        });
+      res.status(500).json({
+        message: "Password must be 8 characters long",
+        type: "password",
+      });
       return;
     }
 
@@ -70,10 +68,15 @@ router.post("/login", async (req, res) => {
 
   try {
     const isEmailValid = emailValidator(email);
-    if (!isEmailValid || password.length <= 7) {
+
+    if (!isEmailValid) {
+      return res.status(400).json({ message: "Invalid email", type: "email" });
+    }
+
+    if (password.length <= 7) {
       return res
         .status(400)
-        .json({ message: "Invalid email or password", type: "all" });
+        .json({ message: "Invalid password", type: "password" });
     }
 
     const result = await pool.query("SELECT * FROM users WHERE email = $1", [
