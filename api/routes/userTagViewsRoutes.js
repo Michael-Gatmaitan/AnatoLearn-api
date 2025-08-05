@@ -39,8 +39,6 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  // const user_id = req.query.user_id;
-  // const tag_name = req.query.tag_name;
   const body = req.body;
   const { user_id, tag_name } = body;
 
