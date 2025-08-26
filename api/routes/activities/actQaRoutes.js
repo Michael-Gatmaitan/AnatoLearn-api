@@ -20,11 +20,14 @@ router.get("/qa", async (req, res) => {
 
     const act_qa = await pool.query(
       "SELECT * FROM act_qa WHERE act_id=$1 ORDER BY RANDOM() LIMIT 5",
+
+      // "SELECT * FROM act_qa WHERE act_id=$1 ORDER BY ID",
       [act_id],
     );
 
     return res.json({ data: act_qa.rows });
   } catch (err) {
+    console.log(err);
     res.status(500).json({ error: err.message });
   }
 });
