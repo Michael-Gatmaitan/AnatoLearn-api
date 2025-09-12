@@ -153,12 +153,12 @@ app.post("/send-verification", async (req, res) => {
     const newVerification = await pool.query(q, p);
     console.log(newVerification);
 
-    // await transporter.sendMail({
-    //   from: `"AnatoLearn" <${process.env.EMAIL_USER}>`,
-    //   to: email,
-    //   subject: "Your Verification Code",
-    //   html: `<p>Your verification code is: <b>${code}</b></p><p>This code will expire in 5 minutes.</p>`,
-    // });
+    await transporter.sendMail({
+      from: `"AnatoLearn" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "Your Verification Code",
+      html: `<p>Your verification code is: <b>${code}</b></p><p>This code will expire in 5 minutes.</p>`,
+    });
 
     return res.json({ message: "Verification code sent!", success: true });
   } catch (error) {
@@ -178,10 +178,10 @@ app.post("/verify-code", async (req, res) => {
 
   try {
     // Get the code in database based on email
-    const getCodeQ = `SELECT * FROM email_verifications WHERE email=$1`;
+    const getCodeQ = `SELECT * FROM email_verifications WHERE email=$1 ORDER BY ID DESC LIMIT 1`;
     const codeResult = await pool.query(getCodeQ, [email]);
 
-    if (!codeResult.rows[0].id)
+    if (codeResult.rows.length == 0)
       return res
         .status(500)
         .json({ message: `There's no code in email of ${email}` });
@@ -201,18 +201,16 @@ app.post("/verify-code", async (req, res) => {
     }
 
     // Once verify, delete the code in the database
-    const deleteCodeResult = await deleteVerification();
+    const deleteCodeResult = await deleteVerification(email);
     console.log(`Deleting confimed code: ${deleteCodeResult}`);
 
     // If the code reach here, it means the code is existed, matched, and not expired.
-    return res.json({ message: "Code matched", succes: true });
+    return res.json({ message: "Code matched", success: true });
   } catch (err) {
-    return res
-      .status(500)
-      .json({
-        message: `There was an error verifying code: ${err}`,
-        success: false,
-      });
+    return res.status(500).json({
+      message: `There was an error verifying code: ${err}`,
+      success: false,
+    });
   }
 });
 
