@@ -1,6 +1,7 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
+const bcrypt = require("bcrypt");
 const nodemailer = require("nodemailer");
 const bodyParser = require("body-parser");
 const userRoutes = require("./routes/userRoutes");
@@ -35,6 +36,12 @@ app.use("/activity-scores", activityScoreRoutes);
 app.use("/user-topic-progress", userTopicProgressRoutes);
 app.use("/user-tag-views", userTagViewsRoutes);
 
+const emailValidator = (email) => {
+  const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const isEmailValid = regex.test(email);
+  return isEmailValid;
+};
+
 app.get("/", (req, res) => {
   return res.json({ message: "Hello, i'm michael gatmaitan :>" });
 });
@@ -53,21 +60,34 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-app.post("/reset-password", async (req, res) => {
-  console.log(process.env.EMAIL_USER);
-  console.log(process.env.EMAIL_PASS);
-  try {
-    await transporter.sendMail({
-      from: "AnatoLearn",
-      to: "mchlgtmtn@gmail.com",
-      subject: "Sample subject",
-      html: "<h1>Hello michael pogi</h1>",
-    });
+app.put("/reset-password", async (req, res) => {
+  const { email, newPassword } = req.body;
 
-    return res.json({ message: "Password reset email sent successfully!" });
+  try {
+    const isEmailValid = emailValidator(email);
+
+    if (!isEmailValid) {
+      return res.json({
+        message: "Reset password - Invalid email: " + email,
+        success: false,
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    const changePassQ = `UPDATE users SET password=$1 WHERE email=$2`;
+    const changePassP = [hashedPassword, email];
+
+    const changePasswordResult = await pool.query(changePassQ, changePassP);
+
+    console.log(changePasswordResult);
+
+    return res.json({ message: "Password reset successful!", success: true });
   } catch (err) {
     console.log(err);
-    return res.status(500).json({ message: "Failed to send email" });
+    return res
+      .status(500)
+      .json({ message: "Failed to send email", success: false });
   }
 });
 
@@ -116,16 +136,15 @@ app.post("/send-verification", async (req, res) => {
 
   if (!email) return res.status(400).json({ message: "Email is required " });
 
-  // console.log(newVerificationCode);
-
   try {
-    // Store this in database for verification code checking
-    // const newVerificationCode = {
-    //   email,
-    //   code,
-    //   expiresAt,
-    //   mode: "C",
-    // };
+    const isEmailValid = emailValidator(email);
+
+    if (!isEmailValid) {
+      return res.json({
+        message: "Send verification - Invalid email: " + email,
+        success: false,
+      });
+    }
 
     if (verificationType == "recovery") {
       // Find email if it exists in users first
@@ -181,10 +200,14 @@ app.post("/verify-code", async (req, res) => {
     const getCodeQ = `SELECT * FROM email_verifications WHERE email=$1 ORDER BY ID DESC LIMIT 1`;
     const codeResult = await pool.query(getCodeQ, [email]);
 
-    if (codeResult.rows.length == 0)
-      return res
-        .status(500)
-        .json({ message: `There's no code in email of ${email}` });
+    if (codeResult.rows.length == 0) {
+      console.log("No code found on email: " + email);
+
+      return res.json({
+        message: `There's no code in email of ${email}`,
+        success: false,
+      });
+    }
 
     // console.log(typeof code, typeof codeResult.rows[0].code);
 
