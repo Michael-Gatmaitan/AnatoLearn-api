@@ -223,7 +223,15 @@ app.post("/send-verification", async (req, res) => {
 </head>
 <body>
   <div class="container">
-    <h2>Verify your email address</h2>
+    <h2>
+      ${
+        verificationType === "creation"
+          ? `Verify your email address`
+          : verificationType === "recovery"
+            ? `Reset your password`
+            : null
+      }
+      </h2>
     <p>Hello,</p>
       ${
         verificationType === "creation"
