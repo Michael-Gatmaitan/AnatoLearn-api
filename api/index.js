@@ -175,8 +175,73 @@ app.post("/send-verification", async (req, res) => {
     await transporter.sendMail({
       from: `"AnatoLearn" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: "Your Verification Code",
-      html: `<p>Your verification code is: <b>${code}</b></p><p>This code will expire in 5 minutes.</p>`,
+      subject: "Your Verification Code - AnatoLearn",
+      // html: `<p>Your verification code is: <b>${code}</b></p><p>This code will expire in 5 minutes.</p>`,
+      html: `
+          <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Email Verification</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #fff;
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #346BA8;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    h2 {
+      color: #fff;
+    }
+    .code {
+      font-size: 28px;
+      font-weight: bold;
+      letter-spacing: 4px;
+      background: #FFB262;
+      padding: 10px 20px;
+      border-radius: 8px;
+      display: inline-block;
+      margin: 20px 0;
+    }
+    p {
+      color: #ccc;
+      font-size: 15px;
+    }
+    .footer {
+      margin-top: 30px;
+      font-size: 12px;
+      color: #eee;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Verify your email address</h2>
+    <p>Hello,</p>
+      ${
+        verificationType === "creation"
+          ? `<p>Thank you for registering with <strong>AnatoLearn</strong>. Please use the verification code below to confirm your email address:</p>`
+          : verificationType === "recovery"
+            ? `<p>Please use the verification code below to create a new password:</p>`
+            : null
+      }
+    
+    <div class="code">${code}</div>
+    <p>This code will expire in 5 minutes. If you did not request this, you can ignore this email.</p>
+    <div class="footer">
+      &copy; 2025 AnatoLearn. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>
+      `,
     });
 
     return res.json({ message: "Verification code sent!", success: true });
