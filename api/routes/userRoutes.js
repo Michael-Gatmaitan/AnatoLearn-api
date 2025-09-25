@@ -4,12 +4,11 @@ const pool = require("../db");
 
 router.get("/", async (req, res) => {
   try {
-    const result = await pool.query("SELECT * FROM users");
+    const result = await pool.query("SELECT name FROM users");
 
-    // res.json({ name: "Michael", password: "michealpogi" });
-    res.json(result.rows);
+    return res.json(result.rows);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 });
 
@@ -49,6 +48,25 @@ router.put("/", async (req, res) => {
     }
   } catch (err) {
     return res.status(500).json({ message: "Error in updating user details" });
+  }
+});
+
+router.delete("/", async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    if (email == null)
+      return res.json({ message: "Email cannot be empty!", success: false });
+
+    const deleteUserQ = "DELETE FROM users WHERE email=$1";
+    const deleteUserP = [email];
+
+    const deletedUser = await pool.query(deleteUserQ, deleteUserP);
+    console.log("Deleted user: " + deletedUser);
+
+    return res.json({ message: "User deleted.", success: true });
+  } catch (err) {
+    return res.status(500).json({ message: "Error in deleting user" });
   }
 });
 

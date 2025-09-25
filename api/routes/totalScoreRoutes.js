@@ -34,6 +34,29 @@ router.get("/", async (req, res) => {
   }
 });
 
+router.get("/u", async (req, res) => {
+  const user_id = req.query.user_id;
+  const get_passed_scores = req.query.get_passed_scores;
+
+  console.log(get_passed_scores);
+
+  try {
+    if (user_id == null)
+      return res.json({
+        message:
+          "User id cannot be null in getting all scores of user in the topic.",
+      });
+
+    const q = "SELECT * FROM total_scores WHERE user_id=$1 ORDER BY topic_id";
+    const p = [user_id];
+
+    const scores = await pool.query(q, p);
+    return res.json({ data: scores.rows });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+});
+
 router.post("/", async (req, res) => {
   const body = req.body;
   const { user_id, topic_id, total_score, accuracy, time } = body;
