@@ -81,7 +81,7 @@ router.post("/", async (req, res) => {
 // TODO of act_scores for TAP, MCQ and TOF
 
 router.post("/total-scores", async (req, res) => {
-  const { scores, topic_id, user_id } = req.body;
+  const { scores, topic_id, user_id, time_left } = req.body; // TODO: add time_left to app request
 
   const { tap, mcq, tof } = scores;
 
@@ -98,13 +98,14 @@ router.post("/total-scores", async (req, res) => {
     const accuracy = (100 / 15) * totalScore; // Accuracy in percentage
 
     const q =
-      "INSERT INTO total_scores (user_id, topic_id, total_score, accuracy) VALUES ($1, $2, $3, $4) RETURNING *";
+      "INSERT INTO total_scores (user_id, topic_id, total_score, accuracy, time_left) VALUES ($1, $2, $3, $4, $5) RETURNING *";
 
     const newTotalScores = await pool.query(q, [
       user_id,
       topic_id,
       totalScore,
       accuracy,
+      time_left,
     ]);
 
     console.log(newTotalScores);
