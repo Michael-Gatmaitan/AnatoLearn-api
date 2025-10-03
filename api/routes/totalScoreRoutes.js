@@ -47,7 +47,14 @@ router.get("/u", async (req, res) => {
           "User id cannot be null in getting all scores of user in the topic.",
       });
 
-    const q = "SELECT * FROM total_scores WHERE user_id=$1 ORDER BY topic_id";
+    let q;
+
+    if (get_passed_scores) {
+      q =
+        "SELECT DISTINCT ON (topic_id) * FROM total_scores WHERE accuracy > 50 AND user_id = $1 ORDER BY topic_id";
+    } else {
+      q = "SELECT * FROM total_scores WHERE user_id=$1 ORDER BY topic_id";
+    }
     const p = [user_id];
 
     const scores = await pool.query(q, p);
