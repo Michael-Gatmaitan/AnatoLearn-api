@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const pool = require("../db");
 
+// Get total users
 router.get("/", async (req, res) => {
   try {
     const result = await pool.query("SELECT name FROM users");
@@ -12,6 +13,8 @@ router.get("/", async (req, res) => {
   }
 });
 
+// Update profile of the user
+// Update name of the user
 router.put("/", async (req, res) => {
   const {
     email,
@@ -23,6 +26,15 @@ router.put("/", async (req, res) => {
   } = req.body;
 
   try {
+    // Check if the user exists ( or maybe we dont need to )
+    const userExistsQ = "SELECT * FROM users WHERE email=$1";
+    const userExistsResult = await pool.query(userExistsQ, [email]);
+
+    if (userExistsResult.rows.length == 0)
+      return res
+        .status(404)
+        .json({ message: "User not found", success: false });
+
     if (updateType === "avatar") {
       const updateAvatarQ = `UPDATE users SET avatar=$1 WHERE email=$2`;
       const updateAvatarP = [newAvatar, email];
@@ -45,18 +57,23 @@ router.put("/", async (req, res) => {
         message: "Name updated successfully",
         success: true,
       });
+    } else {
+      return res.status(400).json({ message: "Update type cannot be null" });
     }
   } catch (err) {
-    return res.status(500).json({ message: "Error in updating user details" });
+    return res.status(400).json({ message: "Error in updating user details" });
   }
 });
 
+// Delete account of the user
 router.delete("/", async (req, res) => {
-  const { email } = req.body;
+  const { email } = req.query;
 
   try {
     if (email == null)
-      return res.json({ message: "Email cannot be empty!", success: false });
+      return res
+        .status(502)
+        .json({ message: "Email cannot be empty!", success: false });
 
     const deleteUserQ = "DELETE FROM users WHERE email=$1";
     const deleteUserP = [email];
@@ -66,17 +83,11 @@ router.delete("/", async (req, res) => {
 
     return res.json({ message: "User deleted.", success: true });
   } catch (err) {
-    return res.status(500).json({ message: "Error in deleting user" });
+    return res
+      .status(400)
+      .json({ message: "Error in deleting user", success: false });
   }
 });
-
-// Get total users
-
-// Update profile of the user
-
-// Delete account of the user
-
-// Update name of the user
 
 // And some other updates
 

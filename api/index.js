@@ -27,6 +27,8 @@ app.use(
   }),
 );
 
+// Add Middleware for security, use 401 for unauthorize
+
 app.use("/api/users", userRoutes);
 app.use("/auth", authRoutes);
 app.use("/activities", qaRoutes);
@@ -37,7 +39,8 @@ app.use("/user-topic-progress", userTopicProgressRoutes);
 app.use("/user-tag-views", userTagViewsRoutes);
 
 const emailValidator = (email) => {
-  const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  // const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const regex = /^[A-Za-z0-9._%+-]+@gmail\.com$/i;
   const isEmailValid = regex.test(email);
   return isEmailValid;
 };
