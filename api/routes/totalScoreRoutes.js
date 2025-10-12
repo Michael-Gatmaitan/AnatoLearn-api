@@ -15,12 +15,12 @@ router.get("/", async (req, res) => {
   try {
     if (user_id && topic_id) {
       if (get_passed_scores == true || get_passed_scores == "true") {
-        console.log("getting highest scores");
+        // console.log("getting highest scores");
         const passed_scores = await getPassedScores(user_id, topic_id);
         return res.json({ data: passed_scores });
       }
 
-      console.log("getting total scores");
+      // console.log("getting total scores");
 
       const totalScores = await getTotalScores(user_id, topic_id);
       return res.json({ data: totalScores });
@@ -49,17 +49,20 @@ router.get("/u", async (req, res) => {
 
     let q;
 
-    if (get_passed_scores) {
+    if (get_passed_scores === "true" || get_passed_scores === true) {
       q =
         "SELECT DISTINCT ON (topic_id) * FROM total_scores WHERE accuracy > 50 AND user_id = $1 ORDER BY topic_id";
     } else {
       q = "SELECT * FROM total_scores WHERE user_id=$1 ORDER BY topic_id";
     }
+
+    console.log("Total score query: " + q);
     const p = [user_id];
 
     const scores = await pool.query(q, p);
     return res.json({ data: scores.rows });
   } catch (err) {
+    console.log(err);
     return res.status(500).json({ message: err.message });
   }
 });
