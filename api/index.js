@@ -4,6 +4,9 @@ const cors = require("cors");
 const bcrypt = require("bcrypt");
 const nodemailer = require("nodemailer");
 const bodyParser = require("body-parser");
+const path = require("path");
+const fs = require("fs");
+const PImage = require("pureimage");
 const userRoutes = require("./routes/userRoutes");
 const authRoutes = require("./routes/auth");
 const qaRoutes = require("./routes/activities/actQaRoutes");
@@ -24,7 +27,7 @@ app.use(cors());
 app.use(
   bodyParser.urlencoded({
     extended: true,
-  }),
+  })
 );
 
 // Add Middleware for security, use 401 for unauthorize
@@ -231,8 +234,8 @@ app.post("/send-verification", async (req, res) => {
         verificationType === "creation"
           ? `Verify your email address`
           : verificationType === "recovery"
-            ? `Reset your password`
-            : null
+          ? `Reset your password`
+          : null
       }
       </h2>
     <p>Hello,</p>
@@ -240,8 +243,8 @@ app.post("/send-verification", async (req, res) => {
         verificationType === "creation"
           ? `<p>Thank you for registering with <strong>AnatoLearn</strong>. Please use the verification code below to confirm your email address:</p>`
           : verificationType === "recovery"
-            ? `<p>Please use the verification code below to create a new password:</p>`
-            : null
+          ? `<p>Please use the verification code below to create a new password:</p>`
+          : null
       }
     
     <div class="code">${code}</div>
@@ -314,3 +317,119 @@ app.post("/verify-code", async (req, res) => {
 });
 
 module.exports = app;
+
+// Generate and email certificate with overlaid user name
+app.post("/send-certificate", async (req, res) => {
+  const { email, name } = req.body;
+
+  if (!email || !name) {
+    return res
+      .status(400)
+      .json({ message: "Email and name are required", success: false });
+  }
+
+  try {
+    const isEmailValid = emailValidator(email);
+    if (!isEmailValid) {
+      return res.json({ message: "Invalid email: " + email, success: false });
+    }
+
+    // Load base certificate PNG
+    const certPath = path.join(
+      __dirname,
+      "assets",
+      "images",
+      "AnatoLearnCertification.png"
+    );
+    if (!fs.existsSync(certPath)) {
+      return res.status(500).json({
+        message: "Certificate template not found",
+        success: false,
+      });
+    }
+
+    const baseCert = await PImage.decodePNGFromStream(
+      fs.createReadStream(certPath)
+    );
+
+    // Prepare drawing surface with same size as base
+    const width = baseCert.width;
+    const height = baseCert.height;
+    const img = PImage.make(width, height);
+    const ctx = img.getContext("2d");
+
+    // Draw base certificate
+    ctx.drawImage(baseCert, 0, 0, width, height);
+
+    // Load font safely (optional custom font)
+    const configuredFontPath = process.env.CERT_FONT_PATH;
+    const defaultFontPath = path.join(
+      __dirname,
+      "assets",
+      "fonts",
+      "SourceSansPro-Regular.ttf"
+    );
+    const fontPathToUse = configuredFontPath || defaultFontPath;
+    try {
+      if (fs.existsSync(fontPathToUse)) {
+        await PImage.registerFont(fontPathToUse, "CertFont").load();
+      }
+    } catch (_) {
+      // continue with default font
+    }
+
+    // Draw user's name centered
+    ctx.fillStyle = "#000000";
+    ctx.textAlign = "center";
+    // Try multiple font sizes to fit width
+    const maxWidth = Math.floor(width * 0.7);
+    const candidateSizes = [72, 64, 56, 48, 42, 36];
+    let chosen = 48;
+    for (const size of candidateSizes) {
+      ctx.font = `${size}pt CertFont`;
+      const metrics = ctx.measureText(name);
+      if (metrics.width <= maxWidth) {
+        chosen = size;
+        break;
+      }
+    }
+    ctx.font = `${chosen}pt CertFont`;
+
+    // Vertical position (roughly center or where the name area is expected)
+    const centerY = Math.floor(height * 0.56);
+    ctx.fillText(name, Math.floor(width / 2), centerY);
+
+    // Encode PNG to buffer
+    const { PassThrough } = require("stream");
+    const pass = new PassThrough();
+    const chunks = [];
+    pass.on("data", (c) => chunks.push(Buffer.from(c)));
+    await PImage.encodePNGToStream(img, pass);
+    pass.end();
+    const pngBuffer = Buffer.concat(chunks);
+
+    // Email the certificate
+    await transporter.sendMail({
+      from: `"AnatoLearn" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "Your AnatoLearn Certificate",
+      html: `<p>Hi ${name},</p><p>Attached is your certificate of completion from <strong>AnatoLearn</strong>.</p>`,
+      attachments: [
+        {
+          filename: `AnatoLearn-Certificate-${name.replace(
+            /[^a-z0-9-_]/gi,
+            "_"
+          )}.png`,
+          content: pngBuffer,
+        },
+      ],
+    });
+
+    return res.json({ message: "Certificate sent!", success: true });
+  } catch (err) {
+    console.error(err);
+    return res
+      .status(500)
+      .json({ message: "Failed to generate/send certificate", success: false });
+  }
+});

@@ -48,8 +48,8 @@ router.post("/signup", async (req, res) => {
     }
 
     const result = await pool.query(
-      "INSERT INTO users (name, email, password, fname, mname, lname) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
-      [name, email, hashedPassword, fname, mname, lname],
+      "INSERT INTO users (name, email, password, fname, mname, lname, avatar) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
+      [name, email, hashedPassword, fname, mname, lname, "default"],
     );
 
     return res
