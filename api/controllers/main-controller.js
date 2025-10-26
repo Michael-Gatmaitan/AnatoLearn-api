@@ -28,7 +28,7 @@ const getTotalScores = async (user_id, topic_id) => {
 
 const getPassedScores = async (user_id, topic_id) => {
   const getQuery = `SELECT * FROM total_scores
-    WHERE accuracy > 50 AND user_id=$1
+    WHERE accuracy > 49 AND user_id=$1
     AND topic_id=$2 ORDER BY total_score LIMIT 1`;
   const params = [user_id, topic_id];
 

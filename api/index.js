@@ -17,6 +17,7 @@ const userTopicProgressRoutes = require("./routes/userTopicProgressRoutes");
 const userTagViewsRoutes = require("./routes/userTagViewsRoutes");
 
 const pool = require("./db");
+const { getPassedScores } = require("./controllers/main-controller");
 
 dotenv.config();
 
@@ -27,7 +28,7 @@ app.use(cors());
 app.use(
   bodyParser.urlencoded({
     extended: true,
-  })
+  }),
 );
 
 // Add Middleware for security, use 401 for unauthorize
@@ -234,8 +235,8 @@ app.post("/send-verification", async (req, res) => {
         verificationType === "creation"
           ? `Verify your email address`
           : verificationType === "recovery"
-          ? `Reset your password`
-          : null
+            ? `Reset your password`
+            : null
       }
       </h2>
     <p>Hello,</p>
@@ -243,8 +244,8 @@ app.post("/send-verification", async (req, res) => {
         verificationType === "creation"
           ? `<p>Thank you for registering with <strong>AnatoLearn</strong>. Please use the verification code below to confirm your email address:</p>`
           : verificationType === "recovery"
-          ? `<p>Please use the verification code below to create a new password:</p>`
-          : null
+            ? `<p>Please use the verification code below to create a new password:</p>`
+            : null
       }
     
     <div class="code">${code}</div>
@@ -316,7 +317,25 @@ app.post("/verify-code", async (req, res) => {
   }
 });
 
-module.exports = app;
+app.get("/has-badge", async (req, res) => {
+  const { user_id, topic_id } = req.query;
+
+  try {
+    const getAllPassedScoresQ = `SELECT * FROM total_scores
+    WHERE accuracy > 49 AND user_id=$1
+    AND topic_id=$2 ORDER BY total_score`;
+    const getAllPassedScoresResult = (
+      await pool.query(getAllPassedScoresQ, [user_id, topic_id])
+    ).rows;
+
+    return res.json({ hasBadge: getAllPassedScoresResult.length >= 1 });
+  } catch (err) {
+    return res.status(500).json({
+      message: `There was an error checking badge passed scores: ${err}`,
+      success: false,
+    });
+  }
+});
 
 // Generate and email certificate with overlaid user name
 app.post("/send-certificate", async (req, res) => {
@@ -334,12 +353,44 @@ app.post("/send-certificate", async (req, res) => {
       return res.json({ message: "Invalid email: " + email, success: false });
     }
 
+    // Check if user already received certificate
+    const userQ = `SELECT * FROM users WHERE email=$1`;
+    const userResult = (await pool.query(userQ, [email])).rows[0];
+    // console.log(userResult.rows[0]);
+
+    console.log("USER RESULT: " + userResult);
+
+    if (userResult.certificate_recieved) {
+      return res.json({
+        message: "You already recieved your certificate",
+        success: false,
+      });
+    }
+
+    // Check if all topics is passed
+    const topicsPassedQ =
+      "SELECT DISTINCT ON (topic_id) * FROM total_scores WHERE accuracy > 49 AND user_id = $1 ORDER BY topic_id";
+    const topicsPassedResult = (
+      await pool.query(topicsPassedQ, [userResult.id])
+    ).rows;
+
+    if (topicsPassedResult.length <= 6) {
+      return res.json({
+        message:
+          "All topics should be passed in order to recieve a certificate.",
+        success: false,
+      });
+    }
+
+    console.log(`User recieved certficate: ${userResult.certificate_recieved}`);
+    console.log(`User length of passed topics: ${topicsPassedResult.length}`);
+
     // Load base certificate PNG
     const certPath = path.join(
       __dirname,
       "assets",
       "images",
-      "AnatoLearnCertification.png"
+      "AnatoLearnCertification.png",
     );
     if (!fs.existsSync(certPath)) {
       return res.status(500).json({
@@ -349,7 +400,7 @@ app.post("/send-certificate", async (req, res) => {
     }
 
     const baseCert = await PImage.decodePNGFromStream(
-      fs.createReadStream(certPath)
+      fs.createReadStream(certPath),
     );
 
     // Prepare drawing surface with same size as base
@@ -367,7 +418,7 @@ app.post("/send-certificate", async (req, res) => {
       __dirname,
       "assets",
       "fonts",
-      "SourceSansPro-Regular.ttf"
+      "SourceSansPro-Regular.ttf",
     );
     const fontPathToUse = configuredFontPath || defaultFontPath;
     try {
@@ -418,12 +469,24 @@ app.post("/send-certificate", async (req, res) => {
         {
           filename: `AnatoLearn-Certificate-${name.replace(
             /[^a-z0-9-_]/gi,
-            "_"
+            "_",
           )}.png`,
           content: pngBuffer,
         },
       ],
     });
+
+    // Change the user's certificate_recieved status after sending the certificate
+    const updateUserCertStatusQ =
+      "UPDATE users SET certificate_recieved = true WHERE id = $1 RETURNING *";
+    const updateUserCertResult = await pool.query(updateUserCertStatusQ, [
+      userResult.id,
+    ]);
+
+    console.log(
+      "Result of user update certificate status: " +
+        updateUserCertResult.rows[0],
+    );
 
     return res.json({ message: "Certificate sent!", success: true });
   } catch (err) {
@@ -433,3 +496,5 @@ app.post("/send-certificate", async (req, res) => {
       .json({ message: "Failed to generate/send certificate", success: false });
   }
 });
+
+module.exports = app;

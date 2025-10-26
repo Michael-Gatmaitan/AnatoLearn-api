@@ -51,7 +51,7 @@ router.get("/u", async (req, res) => {
 
     if (get_passed_scores === "true" || get_passed_scores === true) {
       q =
-        "SELECT DISTINCT ON (topic_id) * FROM total_scores WHERE accuracy > 50 AND user_id = $1 ORDER BY topic_id";
+        "SELECT DISTINCT ON (topic_id) * FROM total_scores WHERE accuracy > 49 AND user_id = $1 ORDER BY topic_id";
     } else {
       q = "SELECT * FROM total_scores WHERE user_id=$1 ORDER BY topic_id";
     }
