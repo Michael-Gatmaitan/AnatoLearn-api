@@ -31,7 +31,6 @@ app.use(
 
 // Add Middleware for security, use 401 for unauthorize
 // Middleware for jwt checking if the token is valid
-
 app.use(jwtMiddleware);
 
 function jwtMiddleware(req, res, next) {
