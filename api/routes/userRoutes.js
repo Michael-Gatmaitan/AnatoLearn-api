@@ -5,7 +5,7 @@ const pool = require("../db");
 // Get total users
 router.get("/", async (req, res) => {
   try {
-    const result = await pool.query("SELECT name FROM users");
+    const result = await pool.query("SELECT * FROM users");
 
     return res.json(result.rows);
   } catch (err) {

@@ -15,9 +15,7 @@ const totalScoreRoutes = require("./routes/totalScoreRoutes");
 const activityScoreRoutes = require("./routes/activityScores");
 const userTopicProgressRoutes = require("./routes/userTopicProgressRoutes");
 const userTagViewsRoutes = require("./routes/userTagViewsRoutes");
-
 const pool = require("./db");
-const { getPassedScores } = require("./controllers/main-controller");
 
 dotenv.config();
 
@@ -32,6 +30,32 @@ app.use(
 );
 
 // Add Middleware for security, use 401 for unauthorize
+// Middleware for jwt checking if the token is valid
+
+app.use(jwtMiddleware);
+
+function jwtMiddleware(req, res, next) {
+  // Bypass middleware for login and signup routes
+  if (
+    (req.path === "/auth/login" || req.path === "/auth/signup") &&
+    req.method === "POST"
+  ) {
+    return next();
+  }
+
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  try {
+    const jwt = require("jsonwebtoken");
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: "Invalid token" });
+  }
+}
 
 app.use("/api/users", userRoutes);
 app.use("/auth", authRoutes);

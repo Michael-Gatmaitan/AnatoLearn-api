@@ -1,5 +1,6 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const pool = require("../db");
 const router = express.Router();
 
@@ -7,6 +8,13 @@ const emailValidator = (email) => {
   const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   const isEmailValid = regex.test(email);
   return isEmailValid;
+};
+
+const signToken = (payload) => {
+  const secret =
+    process.env.JWT_SECRET || "your-secret-key-change-in-production";
+  const expiresIn = process.env.JWT_EXPIRES_IN || "7d";
+  return jwt.sign(payload, secret, { expiresIn });
 };
 
 router.post("/signup", async (req, res) => {
@@ -49,7 +57,7 @@ router.post("/signup", async (req, res) => {
 
     const result = await pool.query(
       "INSERT INTO users (name, email, password, fname, mname, lname, avatar) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
-      [name, email, hashedPassword, fname, mname, lname, "default"],
+      [name, email, hashedPassword, fname, mname, lname, "default"]
     );
 
     return res
@@ -96,7 +104,14 @@ router.post("/login", async (req, res) => {
         .json({ message: "Incorrect password", type: "password" });
     }
 
-    res.json({ message: "Login successful", user });
+    // Generate JWT token
+    const token = signToken({
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+    });
+
+    res.json({ message: "Login successful", user, token });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Login failed", type: "server" });
