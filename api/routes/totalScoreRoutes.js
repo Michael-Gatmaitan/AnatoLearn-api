@@ -49,11 +49,16 @@ router.get("/u", async (req, res) => {
 
     let q;
 
-    if (get_passed_scores === "true" || get_passed_scores === true) {
+    if (
+      get_passed_scores.toLowerCase() === "true" ||
+      get_passed_scores === true
+    ) {
       q =
         "SELECT DISTINCT ON (topic_id) * FROM total_scores WHERE accuracy > 49 AND user_id = $1 ORDER BY topic_id";
+      console.log("SELECTING DISTINC SCORES: " + q);
     } else {
       q = "SELECT * FROM total_scores WHERE user_id=$1 ORDER BY topic_id";
+      console.log("SELECTING ALL SCORES: " + q);
     }
 
     console.log("Total score query: " + q);
