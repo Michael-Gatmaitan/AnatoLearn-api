@@ -33,11 +33,23 @@ app.use(
 // Middleware for jwt checking if the token is valid
 app.use(jwtMiddleware);
 
+const unprotectedRoutes = [
+  "/auth/login",
+  "/auth/signup",
+  "/is-email-valid",
+  "/reset-password",
+  "/send-verification",
+  "/verify-code",
+];
+
 function jwtMiddleware(req, res, next) {
   // Bypass middleware for login and signup routes
   if (
-    (req.path === "/auth/login" || req.path === "/auth/signup") &&
-    req.method === "POST"
+    // req.path === "/auth/login" ||
+    // req.path === "/auth/signup" ||
+    // req.path === "/is-email-valid" ||
+    unprotectedRoutes.includes(req.path)
+    // && req.method === "POST"
   ) {
     return next();
   }
