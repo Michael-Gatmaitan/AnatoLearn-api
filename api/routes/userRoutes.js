@@ -89,6 +89,34 @@ router.delete("/", async (req, res) => {
   }
 });
 
+// GET User's Certificate
+router.get("/get-certificate-url", async (req, res) => {
+  const { email } = req.query;
+
+  try {
+    if (!email)
+      return res.json({ message: "Email cannot be null", success: false });
+
+    const getCertificateUrlQ =
+      "SELECT certificate_url FROM users WHERE email=$1";
+    const getCertificateUrlResult = (
+      await pool.query(getCertificateUrlQ, [email])
+    ).rows[0];
+
+    console.log("Get certificate url result: " + getCertificateUrlResult);
+
+    return res.json({
+      message: "Get certificate url success",
+      success: true,
+      certificate_url: getCertificateUrlResult.certificate_url,
+    });
+  } catch (err) {
+    return res.json({
+      message: "Error in getting user's certificate",
+      success: false,
+    });
+  }
+});
 // And some other updates
 
 module.exports = router;

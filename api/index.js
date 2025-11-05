@@ -7,6 +7,7 @@ const bodyParser = require("body-parser");
 const path = require("path");
 const fs = require("fs");
 const PImage = require("pureimage");
+const { createClient } = require("@supabase/supabase-js");
 const userRoutes = require("./routes/userRoutes");
 const authRoutes = require("./routes/auth");
 const qaRoutes = require("./routes/activities/actQaRoutes");
@@ -26,7 +27,7 @@ app.use(cors());
 app.use(
   bodyParser.urlencoded({
     extended: true,
-  }),
+  })
 );
 
 // Add Middleware for security, use 401 for unauthorize
@@ -101,6 +102,13 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS,
   },
 });
+
+// Supabase client for storage
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+const supabase =
+  supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 app.put("/reset-password", async (req, res) => {
   const { email, newPassword } = req.body;
@@ -270,8 +278,8 @@ app.post("/send-verification", async (req, res) => {
         verificationType === "creation"
           ? `Verify your email address`
           : verificationType === "recovery"
-            ? `Reset your password`
-            : null
+          ? `Reset your password`
+          : null
       }
       </h2>
     <p>Hello,</p>
@@ -279,8 +287,8 @@ app.post("/send-verification", async (req, res) => {
         verificationType === "creation"
           ? `<p>Thank you for registering with <strong>AnatoLearn</strong>. Please use the verification code below to confirm your email address:</p>`
           : verificationType === "recovery"
-            ? `<p>Please use the verification code below to create a new password:</p>`
-            : null
+          ? `<p>Please use the verification code below to create a new password:</p>`
+          : null
       }
     
     <div class="code">${code}</div>
@@ -395,7 +403,7 @@ app.post("/send-certificate", async (req, res) => {
 
     console.log("USER RESULT: " + userResult);
 
-    if (userResult.certificate_recieved) {
+    if (userResult.certificate_recieved && userResult.certificate_url) {
       return res.json({
         message: "You already recieved your certificate",
         success: false,
@@ -425,7 +433,7 @@ app.post("/send-certificate", async (req, res) => {
       __dirname,
       "assets",
       "images",
-      "AnatoLearnCertification.png",
+      "AnatoLearnCertification.png"
     );
     if (!fs.existsSync(certPath)) {
       return res.status(500).json({
@@ -435,7 +443,7 @@ app.post("/send-certificate", async (req, res) => {
     }
 
     const baseCert = await PImage.decodePNGFromStream(
-      fs.createReadStream(certPath),
+      fs.createReadStream(certPath)
     );
 
     // Prepare drawing surface with same size as base
@@ -453,7 +461,7 @@ app.post("/send-certificate", async (req, res) => {
       __dirname,
       "assets",
       "fonts",
-      "SourceSansPro-Regular.ttf",
+      "SourceSansPro-Regular.ttf"
     );
     const fontPathToUse = configuredFontPath || defaultFontPath;
     try {
@@ -494,17 +502,50 @@ app.post("/send-certificate", async (req, res) => {
     pass.end();
     const pngBuffer = Buffer.concat(chunks);
 
+    // Upload the certificate to Supabase Storage
+    let certificatePublicUrl = null;
+    try {
+      if (!supabase) {
+        console.warn("Supabase client not configured. Skipping upload.");
+      } else {
+        const bucket = process.env.SUPABASE_CERT_BUCKET || "certificates";
+        const safeName = name.replace(/[^a-z0-9-_]/gi, "_");
+        const timestamp = Date.now();
+        const filePath = `${userResult.id}/AnatoLearn-Certificate-${safeName}-${timestamp}.png`;
+
+        const uploadRes = await supabase.storage
+          .from(bucket)
+          .upload(filePath, pngBuffer, {
+            contentType: "image/png",
+            upsert: true,
+          });
+
+        if (uploadRes.error) {
+          console.error("Supabase upload error:", uploadRes.error);
+        } else {
+          const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
+          certificatePublicUrl = data?.publicUrl || null;
+        }
+      }
+    } catch (storageErr) {
+      console.error("Error uploading certificate to storage: ", storageErr);
+    }
+
     // Email the certificate
     await transporter.sendMail({
       from: `"AnatoLearn" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "Your AnatoLearn Certificate",
-      html: `<p>Hi ${name},</p><p>Attached is your certificate of completion from <strong>AnatoLearn</strong>.</p>`,
+      html: `<p>Hi ${name},</p><p>Attached is your certificate of completion from <strong>AnatoLearn</strong>.</p>${
+        certificatePublicUrl
+          ? `<p>You can also view it here: <a href="${certificatePublicUrl}">${certificatePublicUrl}</a></p>`
+          : ""
+      }`,
       attachments: [
         {
           filename: `AnatoLearn-Certificate-${name.replace(
             /[^a-z0-9-_]/gi,
-            "_",
+            "_"
           )}.png`,
           content: pngBuffer,
         },
@@ -512,18 +553,35 @@ app.post("/send-certificate", async (req, res) => {
     });
 
     // Change the user's certificate_recieved status after sending the certificate
-    const updateUserCertStatusQ =
+    const updateUserCertificateStatusQ =
       "UPDATE users SET certificate_recieved = true WHERE id = $1 RETURNING *";
-    const updateUserCertResult = await pool.query(updateUserCertStatusQ, [
-      userResult.id,
-    ]);
+    const updateUserCertificateStatusResult = await pool.query(
+      updateUserCertificateStatusQ,
+      [userResult.id]
+    );
 
     console.log(
       "Result of user update certificate status: " +
-        updateUserCertResult.rows[0],
+        updateUserCertificateStatusResult.rows[0]
     );
 
-    return res.json({ message: "Certificate sent!", success: true });
+    // Update user's crtficate_url data
+    const updateUserCertificateUrlQ = `UPDATE users SET certificate_url=$1 WHERE email=$2 RETURNING *`;
+    const updateUserCertificateUrlResult = await pool.query(
+      updateUserCertificateUrlQ,
+      [certificatePublicUrl, email]
+    );
+
+    console.log(
+      "Update user certificate result: " +
+        updateUserCertificateUrlResult.rows[0]
+    );
+
+    return res.json({
+      message: "Certificate sent!",
+      success: true,
+      imageUrl: certificatePublicUrl,
+    });
   } catch (err) {
     console.error(err);
     return res
