@@ -478,7 +478,7 @@ app.post("/send-certificate", async (req, res) => {
     // Try multiple font sizes to fit width
     const maxWidth = Math.floor(width * 0.7);
     const candidateSizes = [72, 64, 56, 48, 42, 36];
-    let chosen = 48;
+    let chosen = 32;
     for (const size of candidateSizes) {
       ctx.font = `${size}pt CertFont`;
       const metrics = ctx.measureText(name);
@@ -492,6 +492,21 @@ app.post("/send-certificate", async (req, res) => {
     // Vertical position (roughly center or where the name area is expected)
     const centerY = Math.floor(height * 0.56);
     ctx.fillText(name, Math.floor(width / 2), centerY);
+    // Display current date and time on certificate
+    const dateOptions = {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Manila",
+    };
+    const dateStr = new Date()
+      .toLocaleString("en-US", dateOptions)
+      .replace(",", " •");
+    ctx.font = `28pt CertFont`;
+    ctx.fillText(dateStr, Math.floor(width / 2), centerY + 75);
 
     // Encode PNG to buffer
     const { PassThrough } = require("stream");
