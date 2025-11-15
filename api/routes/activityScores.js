@@ -16,7 +16,7 @@ router.get("/", async (req, res) => {
       // Valid
       const actScore = await pool.query(
         "SELECT * FROM activity_scores WHERE user_id=$1 AND act_type_id=$2 AND topic_id=$3",
-        [user_id, act_type_id, topic_id],
+        [user_id, act_type_id, topic_id]
       );
       console.log(actScore);
       return res.json(actScore.rows[0]);
@@ -48,7 +48,7 @@ router.post("/", async (req, res) => {
     if (user_id && act_type_id && topic_id && score) {
       const newActScore = await pool.query(
         "INSERT INTO activity_scores (act_type_id, user_id, topic_id, score) VALUES ($1, $2, $3, $4)",
-        [act_type_id, user_id, topic_id, score],
+        [act_type_id, user_id, topic_id, score]
       );
 
       console.log("new act score created: ", newActScore);
@@ -79,6 +79,10 @@ router.post("/", async (req, res) => {
 // TODO Sum of scores and create total_scores
 // TODO Get total_scores id and create reacords
 // TODO of act_scores for TAP, MCQ and TOF
+
+//
+// Label of inp[uts ] in edit name
+// Replace certificate on update of name
 
 router.post("/total-scores", async (req, res) => {
   const { scores, topic_id, user_id, time_left } = req.body; // TODO: add time_left to app request
@@ -140,7 +144,7 @@ router.post("/total-scores", async (req, res) => {
     console.log(
       newTapActScore.rows[0],
       newMcqActScore.rows[0],
-      newTofActScore.rows[0],
+      newTofActScore.rows[0]
     );
 
     // lets test this shit
@@ -159,8 +163,9 @@ router.get("/total-scores", async (req, res) => {
   const total_scores_id = req.query.total_scores_id;
 
   try {
-    const activity_scores =
-      await getActivityScoresByTotalScoreId(total_scores_id);
+    const activity_scores = await getActivityScoresByTotalScoreId(
+      total_scores_id
+    );
     return res.json({ data: activity_scores });
   } catch (err) {
     return res.status(500).json({

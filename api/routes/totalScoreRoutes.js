@@ -79,7 +79,7 @@ router.post("/", async (req, res) => {
   try {
     const newScore = await pool.query(
       "INSERT INTO total_scores (user_id, topic_id, total_score, accuracy) values ($1, $2, $3, $4)",
-      [user_id, topic_id, total_score, accuracy],
+      [user_id, topic_id, total_score, accuracy]
     );
 
     return res.json(newScore.rows);
@@ -99,6 +99,19 @@ router.get("/total-attempts", async (req, res) => {
 
     const result = await pool.query(selectQuery, params);
     return res.json(result.rows[0]);
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+});
+
+router.get("/perfect-scores", async (req, res) => {
+  const user_id = req.query.user_id;
+  console.log("ASDASD");
+  try {
+    const perfectScoresQuery =
+      "SELECT DISTINCT ON (topic_id) * FROM total_scores WHERE accuracy = 100 AND user_id=$1";
+    const result = await pool.query(perfectScoresQuery, [user_id]);
+    return res.json({ data: result.rows });
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
