@@ -22,7 +22,8 @@ router.put("/", async (req, res) => {
     newFirstname,
     newMiddlename,
     newLastname,
-    updateType,
+    newUsername,
+    updateType, // Could be "avatar", "name", or "username"
   } = req.body;
 
   try {
@@ -56,6 +57,17 @@ router.put("/", async (req, res) => {
       return res.json({
         message: "Name updated successfully",
         success: true,
+      });
+    } else if (updateType === "username") {
+      const updateUsernameQ = `UPDATE users SET name=$1 WHERE email=$2`;
+      const updateUsernameP = [newUsername, email];
+
+      const updateUsernameResult = await pool.query(updateUsernameQ, updateUsernameP);
+      console.log(updateUsernameResult);
+
+      return res.json({
+        message: "Username updated successfully",
+        success: true
       });
     } else {
       return res.status(400).json({ message: "Update type cannot be null" });

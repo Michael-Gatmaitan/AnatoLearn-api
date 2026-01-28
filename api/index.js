@@ -365,7 +365,7 @@ app.get("/has-badge", async (req, res) => {
 
   try {
     const getAllPassedScoresQ = `SELECT * FROM total_scores
-    WHERE accuracy > 49 AND user_id=$1
+    WHERE accuracy = 100 AND user_id=$1
     AND topic_id=$2 ORDER BY total_score`;
     const getAllPassedScoresResult = (
       await pool.query(getAllPassedScoresQ, [user_id, topic_id])
@@ -382,7 +382,7 @@ app.get("/has-badge", async (req, res) => {
 
 // Generate and email certificate with overlaid user name
 app.post("/send-certificate", async (req, res) => {
-  const { email, name } = req.body;
+  const { email, name, nameEdited } = req.body;
 
   if (!email || !name) {
     return res
@@ -401,9 +401,11 @@ app.post("/send-certificate", async (req, res) => {
     const userResult = (await pool.query(userQ, [email])).rows[0];
     // console.log(userResult.rows[0]);
 
-    console.log("USER RESULT: " + userResult);
-
-    if (userResult.certificate_recieved && userResult.certificate_url) {
+    if (
+      userResult.certificate_recieved &&
+      userResult.certificate_url &&
+      nameEdited != "yes"
+    ) {
       return res.json({
         message: "You already recieved your certificate",
         success: false,
@@ -524,9 +526,23 @@ app.post("/send-certificate", async (req, res) => {
         console.warn("Supabase client not configured. Skipping upload.");
       } else {
         const bucket = process.env.SUPABASE_CERT_BUCKET || "certificates";
+
+        if (nameEdited == "yes") {
+          const { data, error } = await supabase.storage
+            .from(bucket)
+            .remove([`${userResult.id}/${userResult.certificateUrl}`]);
+          console.log(`Certificate removed from storage: ${data}`);
+        }
         const safeName = name.replace(/[^a-z0-9-_]/gi, "_");
         const timestamp = Date.now();
         const filePath = `${userResult.id}/AnatoLearn-Certificate-${safeName}-${timestamp}.png`;
+
+        if (nameEdited == "yes") {
+          const { data, error } = await supabase.storage
+            .from(bucket)
+            .remove([`${userResult.id}/${userResult.certificateUrl}`]);
+          console.log(`Certificate removed from storage: ${data}`);
+        }
 
         const uploadRes = await supabase.storage
           .from(bucket)
