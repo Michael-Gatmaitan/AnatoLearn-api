@@ -274,22 +274,20 @@ app.post("/send-verification", async (req, res) => {
 <body>
   <div class="container">
     <h2>
-      ${
-        verificationType === "creation"
+      ${verificationType === "creation"
           ? `Verify your email address`
           : verificationType === "recovery"
-          ? `Reset your password`
-          : null
-      }
+            ? `Reset your password`
+            : null
+        }
       </h2>
     <p>Hello,</p>
-      ${
-        verificationType === "creation"
+      ${verificationType === "creation"
           ? `<p>Thank you for registering with <strong>AnatoLearn</strong>. Please use the verification code below to confirm your email address:</p>`
           : verificationType === "recovery"
-          ? `<p>Please use the verification code below to create a new password:</p>`
-          : null
-      }
+            ? `<p>Please use the verification code below to create a new password:</p>`
+            : null
+        }
     
     <div class="code">${code}</div>
     <p>This code will expire in 5 minutes. If you did not request this, you can ignore this email.</p>
@@ -414,7 +412,8 @@ app.post("/send-certificate", async (req, res) => {
 
     // Check if all topics is passed
     const topicsPassedQ =
-      "SELECT DISTINCT ON (topic_id) * FROM total_scores WHERE accuracy > 49 AND user_id = $1 ORDER BY topic_id";
+      // Get passed score by total_score
+      "SELECT DISTINCT ON (topic_id) * FROM total_scores WHERE total_score >= 10 AND user_id = $1 ORDER BY topic_id";
     const topicsPassedResult = (
       await pool.query(topicsPassedQ, [userResult.id])
     ).rows;
@@ -567,11 +566,10 @@ app.post("/send-certificate", async (req, res) => {
       from: `"AnatoLearn" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "Your AnatoLearn Certificate",
-      html: `<p>Hi ${name},</p><p>Attached is your certificate of completion from <strong>AnatoLearn</strong>.</p>${
-        certificatePublicUrl
-          ? `<p>You can also view it here: <a href="${certificatePublicUrl}">${certificatePublicUrl}</a></p>`
-          : ""
-      }`,
+      html: `<p>Hi ${name},</p><p>Attached is your certificate of completion from <strong>AnatoLearn</strong>.</p>${certificatePublicUrl
+        ? `<p>You can also view it here: <a href="${certificatePublicUrl}">${certificatePublicUrl}</a></p>`
+        : ""
+        }`,
       attachments: [
         {
           filename: `AnatoLearn-Certificate-${name.replace(
@@ -593,7 +591,7 @@ app.post("/send-certificate", async (req, res) => {
 
     console.log(
       "Result of user update certificate status: " +
-        updateUserCertificateStatusResult.rows[0]
+      updateUserCertificateStatusResult.rows[0]
     );
 
     // Update user's crtficate_url data
@@ -605,7 +603,7 @@ app.post("/send-certificate", async (req, res) => {
 
     console.log(
       "Update user certificate result: " +
-        updateUserCertificateUrlResult.rows[0]
+      updateUserCertificateUrlResult.rows[0]
     );
 
     return res.json({
