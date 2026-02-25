@@ -18,7 +18,7 @@ const getTagByName = async (name) => {
 };
 
 const getTotalScores = async (user_id, topic_id) => {
-  const q = "SELECT * FROM total_scores WHERE user_id=$1 AND topic_id=$2";
+  const q = "SELECT * FROM total_scores WHERE user_id=$1 AND topic_id=$2 ORDER BY created_at DESC";
   const params = [user_id, topic_id];
 
   const totalScores = (await pool.query(q, params)).rows;
@@ -37,12 +37,22 @@ const getPassedScores = async (user_id, topic_id) => {
     AND topic_id=$2 ORDER BY total_score DESC LIMIT 1`;
   const params = [user_id, topic_id];
 
-  console.log("Getting all passed scores");
+  // console.log("Getting all passed scores");
 
   const result = await pool.query(getQuery, params);
 
   return result.rows;
 };
+
+const getPassedScoreCount = async (user_id, topic_id) => {
+  if (!user_id) return 0;
+  const getQuery = `SELECT COUNT(*) FROM total_scores
+    WHERE total_score >= 10 AND user_id=$1
+    AND topic_id=$2`;
+  const result = await pool.query(getQuery, [user_id, topic_id]);
+
+  return parseInt(result.rows[0].count);
+}
 
 const getUserTagViewsByUserId = async (user_id) => {
   const selectQuery = "SELECT * FROM UserTagViews WHERE user_id = $1";
@@ -136,6 +146,7 @@ module.exports = {
   getTagByName,
   getTotalScores,
   getPassedScores,
+  getPassedScoreCount,
   getUserTagViewsByUserId,
   getUserTagViewsByUserIdAndTagId,
   createUserTagView,

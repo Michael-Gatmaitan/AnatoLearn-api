@@ -3,6 +3,7 @@ const router = express.Router();
 const pool = require("../db");
 const {
   getActivityScoresByTotalScoreId,
+  getPassedScoreCount,
 } = require("../controllers/main-controller");
 
 // Get score of activity of user = user_id in topic of topic_id and act_type_id if it is tap, mcq or tof
@@ -85,9 +86,10 @@ router.post("/", async (req, res) => {
 // Replace certificate on update of name
 
 router.post("/total-scores", async (req, res) => {
-  const { scores, topic_id, user_id, time_left } = req.body; // TODO: add time_left to app request
+  let { scores, topic_id, user_id, time_left, difficulty } = req.body; // TODO: add time_left to app request
 
   const { tap, mcq, tof } = scores;
+  const difficulties = ['easy', 'medium', 'hard'];
 
   if (tap == null || mcq == null || tof == null) {
     return res
@@ -101,8 +103,21 @@ router.post("/total-scores", async (req, res) => {
     const totalScore = tap + mcq + tof;
     const accuracy = (100 / 15) * totalScore; // Accuracy in percentage
 
+    // Count passed
+    let passedScoreCount = await getPassedScoreCount(user_id, topic_id);
+
+    if (passedScoreCount === 0) {
+      difficulty = difficulties[0]; // Easy
+    } else if (passedScoreCount === 1) {
+      difficulty = difficulties[1]; // Medium
+    } else {
+      difficulty = difficulties[2]; // Hard
+    }
+
+    console.log("Total score difficulty has been set to ", difficulty);
+
     const q =
-      "INSERT INTO total_scores (user_id, topic_id, total_score, accuracy, time_left) VALUES ($1, $2, $3, $4, $5) RETURNING *";
+      "INSERT INTO total_scores (user_id, topic_id, total_score, accuracy, time_left, difficulty) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *";
 
     const newTotalScores = await pool.query(q, [
       user_id,
@@ -110,6 +125,7 @@ router.post("/total-scores", async (req, res) => {
       totalScore,
       accuracy,
       time_left,
+      difficulty
     ]);
 
     console.log(newTotalScores);

@@ -107,7 +107,7 @@ router.get("/total-attempts", async (req, res) => {
 
 router.get("/perfect-scores", async (req, res) => {
   const user_id = req.query.user_id;
-  console.log("ASDASD");
+  // console.log("ASDASD");
   try {
     const perfectScoresQuery =
       "SELECT DISTINCT ON (topic_id) * FROM total_scores WHERE accuracy = 100 AND user_id=$1";

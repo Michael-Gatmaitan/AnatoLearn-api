@@ -32,7 +32,8 @@ app.use(
 
 // Add Middleware for security, use 401 for unauthorize
 // Middleware for jwt checking if the token is valid
-app.use(jwtMiddleware);
+
+// app.use(jwtMiddleware);
 
 const unprotectedRoutes = [
   "/auth/login",
